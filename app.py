@@ -10,7 +10,6 @@ app = Flask(__name__)
 
 
 def create_map(start_coord: tuple[float,float], end_coord: tuple[float, float]):
-    mid_coord = ((start_coord[0]+end_coord[0]/2), (start_coord[1]+end_coord[1])/2)
     distance = geodesic(start_coord, end_coord).kilometers
 
     # Determine zoom level based on distance
@@ -22,7 +21,7 @@ def create_map(start_coord: tuple[float,float], end_coord: tuple[float, float]):
         zoom_level = 7
     else:
         zoom_level = 3
-    m = Map(mid_coord, zoom_start=zoom_level)
+    m = Map(start_coord, zoom_start=zoom_level)
 
     curve_points = great_circle_points(
         start_coord, end_coord
