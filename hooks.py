@@ -1,15 +1,12 @@
 import numpy as np
 
+
 def avg(i: float, j: float) -> float:
-    return (i+j)/2
+    return (i + j) / 2
 
-# Convert degrees to radians
-def deg_to_rad(deg):
-    return deg * np.pi / 180
 
-# Convert radians to degrees
-def rad_to_deg(rad):
-    return rad * 180 / np.pi
+def get_mid_point(start: tuple[float, float], end: tuple[float, float]):
+    return avg(start[0], end[0]), avg(start[1], end[1])
 
 # Function to calculate the intermediate points along the great-circle route
 def great_circle_points(start_lat_lon: tuple, end_lat_lon: tuple, n_points=100):

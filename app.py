@@ -1,14 +1,15 @@
+from email.policy import default
+
 from flask import Flask, request
 from folium import Map, plugins, Marker, Icon, PolyLine
 from geopy.distance import geodesic
 import os
-from hooks import avg, great_circle_points
-
+from hooks import get_mid_point, great_circle_points
 
 app = Flask(__name__)
 
 
-def create_map(start_coord: tuple[float,float], end_coord: tuple[float, float]) -> Map:
+def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float], dep: str, des: str) -> Map:
     distance = geodesic(start_coord, end_coord).kilometers
 
     # Determine zoom level based on distance
@@ -21,42 +22,47 @@ def create_map(start_coord: tuple[float,float], end_coord: tuple[float, float]) 
     else:
         zoom_level = 3
 
-    mid_point = [avg(start_coord[0], end_coord[0]), avg(start_coord[1], end_coord[1])]
-    m = Map(mid_point, zoom_start=zoom_level)
+    m = Map(get_mid_point(start_coord, end_coord), zoom_start=zoom_level)
 
     curve_points = great_circle_points(
         start_coord, end_coord
     )
-    Marker(location=start_coord, tooltip="Departure Airport", icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=45)).add_to(m)
+    Marker(location=start_coord, tooltip=dep, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=45)).add_to(
+        m)
+    Marker(location=end_coord, tooltip=des, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=135)).add_to(m)
+    plane_index = len(curve_points) // 8
 
     # Adding Bézier curve to the map
     curve_line = PolyLine(curve_points[::-1], color="red", opacity=0.5).add_to(m)
+    tiny_line = PolyLine(curve_points[:-plane_index][::-1], color="transparent").add_to(m)
 
     # Add plane to the line
     attr = {"fill": "red", "font-weight": "bold", "font-size": "30"}
-
     plugins.PolyLineTextPath(
-        curve_line,
+        tiny_line,
         "\u2708",  # Plane unicode symbol
         repeat=False,
-        offset=14.5,
         orientation=180,
         attributes=attr,
     ).add_to(m)
-    m.get_root().height="100%"
+    # Set the height to 100% in order to avoid an unnecessary scrollbar
+    m.get_root().height = "100%"
     return m
+
 
 # Route to render the map with dynamic coordinates
 @app.route('/map', methods=['GET'])
 def serve_map():
     # Get the latitude and longitude from the request's query parameters (default to some coordinates if not provided)
-    start_lat = request.args.get('start_lat', default=37.7749, type=float)  # Default to San Francisco latitude
-    start_lon = request.args.get('start_lon', default=-122.4194, type=float)  # Default to San Francisco longitude
+    start_lat = request.args.get('start_lat', default=34.0522, type=float)  # Default to Los Angeles latitude
+    start_lon = request.args.get('start_lon', default=-118.2437, type=float)  # Default to Los Angeles longitude
     end_lat = request.args.get('end_lat', default=32.0853, type=float)  # Default to Tel Aviv latitude
     end_lon = request.args.get('end_lon', default=34.7818, type=float)  # Default to Tel Aviv longitude
+    dep = request.args.get("dep", default="KLAX", type=str)
+    des = request.args.get("des", default="KTLV", type=str)
 
     # Create the map centered on the start coordinates
-    m = create_map((start_lat, start_lon), (end_lat, end_lon))
+    m = create_map((start_lat, start_lon), (end_lat, end_lon), dep, des)
     # Generate the HTML representation of the map
     map_html = m._repr_html_()
     return map_html
@@ -65,4 +71,3 @@ def serve_map():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))  # Render will set the PORT environment variable
     app.run(host='0.0.0.0', port=port)  # Bind to 0.0.0.0 to be accessible externally
-
