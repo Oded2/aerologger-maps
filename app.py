@@ -1,15 +1,14 @@
 from flask import Flask, request
-import folium
-from folium import Map, plugins
-import numpy as np
+from folium import Map, plugins, Marker, Icon, PolyLine
 from geopy.distance import geodesic
 import os
+from hooks import avg, great_circle_points
 
 
 app = Flask(__name__)
 
 
-def create_map(start_coord: tuple[float,float], end_coord: tuple[float, float]):
+def create_map(start_coord: tuple[float,float], end_coord: tuple[float, float]) -> Map:
     distance = geodesic(start_coord, end_coord).kilometers
 
     # Determine zoom level based on distance
@@ -21,14 +20,17 @@ def create_map(start_coord: tuple[float,float], end_coord: tuple[float, float]):
         zoom_level = 7
     else:
         zoom_level = 3
-    m = Map(start_coord, zoom_start=zoom_level)
+
+    mid_point = [avg(start_coord[0], end_coord[0]), avg(start_coord[1], end_coord[1])]
+    m = Map(mid_point, zoom_start=zoom_level)
 
     curve_points = great_circle_points(
         start_coord, end_coord
     )
+    Marker(location=start_coord, tooltip="Departure Airport", icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=45)).add_to(m)
 
     # Adding Bézier curve to the map
-    curve_line = folium.PolyLine(curve_points[::-1], color="red", opacity=0.5).add_to(m)
+    curve_line = PolyLine(curve_points[::-1], color="red", opacity=0.5).add_to(m)
 
     # Add plane to the line
     attr = {"fill": "red", "font-weight": "bold", "font-size": "30"}
@@ -41,52 +43,8 @@ def create_map(start_coord: tuple[float,float], end_coord: tuple[float, float]):
         orientation=180,
         attributes=attr,
     ).add_to(m)
+    m.get_root().height="100%"
     return m
-
-
-# Convert degrees to radians
-def deg_to_rad(deg):
-    return deg * np.pi / 180
-
-
-# Convert radians to degrees
-def rad_to_deg(rad):
-    return rad * 180 / np.pi
-
-
-# Function to calculate the intermediate points along the great-circle route
-def great_circle_points(start_lat_lon: tuple, end_lat_lon: tuple, n_points=100):
-    # Convert latitude and longitude from degrees to radians
-    start_lat_lon_rad = np.radians(start_lat_lon)
-    end_lat_lon_rad = np.radians(end_lat_lon)
-
-    # Calculate the central angle between the two points
-    delta_sigma = np.arccos(np.sin(start_lat_lon_rad[0]) * np.sin(end_lat_lon_rad[0]) +
-                            np.cos(start_lat_lon_rad[0]) * np.cos(end_lat_lon_rad[0]) *
-                            np.cos(end_lat_lon_rad[1] - start_lat_lon_rad[1]))
-
-    # Interpolate points along the great-circle path
-    t = np.linspace(0, 1, n_points)
-    intermediate_points = np.zeros((n_points, 2))
-
-    for i, _t in enumerate(t):
-        # Calculate the spherical linear interpolation (SLERP) between the two points
-        A = np.sin((1 - _t) * delta_sigma) / np.sin(delta_sigma)
-        B = np.sin(_t * delta_sigma) / np.sin(delta_sigma)
-
-        x = A * np.cos(start_lat_lon_rad[0]) * np.cos(start_lat_lon_rad[1]) + \
-            B * np.cos(end_lat_lon_rad[0]) * np.cos(end_lat_lon_rad[1])
-        y = A * np.cos(start_lat_lon_rad[0]) * np.sin(start_lat_lon_rad[1]) + \
-            B * np.cos(end_lat_lon_rad[0]) * np.sin(end_lat_lon_rad[1])
-        z = A * np.sin(start_lat_lon_rad[0]) + B * np.sin(end_lat_lon_rad[0])
-
-        # Convert the Cartesian coordinates back to latitude and longitude
-        lat = np.arctan2(z, np.sqrt(x ** 2 + y ** 2))
-        lon = np.arctan2(y, x)
-
-        intermediate_points[i] = np.degrees([lat, lon])
-
-    return intermediate_points.tolist()
 
 # Route to render the map with dynamic coordinates
 @app.route('/map', methods=['GET'])
