@@ -1,15 +1,17 @@
+import json
+import os
+
 from flask import Flask, request
 from folium import Map, plugins, Marker, Icon, PolyLine
-from folium.plugins import AntPath
 from geopy.distance import geodesic
-import os
+
 from hooks import get_mid_point, great_circle_points
-import json
 
 app = Flask(__name__)
 
 
-def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float], dep: str, des: str, dep_weather: dict, des_weather: dict) -> Map:
+def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float], dep: str, des: str, dep_weather: dict,
+               des_weather: dict) -> Map:
     distance = geodesic(start_coord, end_coord).kilometers
     # Determine zoom level based on distance
     if distance < 500:
@@ -29,7 +31,7 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
     Marker(location=start_coord, tooltip=dep, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=45)).add_to(
         m)
     Marker(location=end_coord, tooltip=des, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=135)).add_to(m)
-    add_wind(0,0,m, start_coord)
+    add_wind(0, 0, m, start_coord)
     plane_index = len(curve_points) // 8
 
     # Adding Bézier curve to the map
@@ -50,7 +52,8 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
     m.get_root().height = "100%"
     return m
 
-def add_wind(direction: int, speed: int, m: Map, location: tuple[float,float]):
+
+def add_wind(direction: int, speed: int, m: Map, location: tuple[float, float]):
     pass
     # end =geodesic(km=10).destination(location, 90)
     # print(end)
@@ -62,9 +65,8 @@ def add_wind(direction: int, speed: int, m: Map, location: tuple[float,float]):
     # ).add_to(m)
 
 
-
 # Route to render the map with dynamic coordinates
-@app.route('/map', methods=['GET'])
+@app.route('/ map', methods=['GET'])
 def serve_map():
     # Get the latitude and longitude from the request's query parameters (default to some coordinates if not provided)
     start_lat = request.args.get('start_lat', default=34.0522, type=float)  # Default to Los Angeles latitude
@@ -73,7 +75,7 @@ def serve_map():
     end_lon = request.args.get('end_lon', default=34.7818, type=float)  # Default to Tel Aviv longitude
     dep = request.args.get("dep", default="KLAX", type=str)
     des = request.args.get("des", default="KTLV", type=str)
-    dep_weather = json.loads( request.args.get("dep_weather", type=str))
+    dep_weather = json.loads(request.args.get("dep_weather", type=str))
     des_weather = json.loads(request.args.get("des_weather", type=str))
 
     # Create the map centered on the start coordinates
