@@ -8,36 +8,53 @@ def avg(i: float, j: float) -> float:
 def get_mid_point(start: tuple[float, float], end: tuple[float, float]):
     return avg(start[0], end[0]), avg(start[1], end[1])
 
+
 # Function to calculate the intermediate points along the great-circle route
 def great_circle_points(start_lat_lon: tuple, end_lat_lon: tuple, n_points=100):
-    # Convert latitude and longitude from degrees to radians
-    start_lat_lon_rad = np.radians(start_lat_lon)
-    end_lat_lon_rad = np.radians(end_lat_lon)
+    """
+    Calculate intermediate points along the great-circle route between two geographic coordinates.
 
-    # Calculate the central angle between the two points
-    delta_sigma = np.arccos(np.sin(start_lat_lon_rad[0]) * np.sin(end_lat_lon_rad[0]) +
-                            np.cos(start_lat_lon_rad[0]) * np.cos(end_lat_lon_rad[0]) *
-                            np.cos(end_lat_lon_rad[1] - start_lat_lon_rad[1]))
+    Parameters:
+    - start_lat_lon: A tuple (latitude, longitude) for the starting point in degrees.
+    - end_lat_lon: A tuple (latitude, longitude) for the ending point in degrees.
+    - n_points: The number of intermediate points to generate along the path.
 
-    # Interpolate points along the great-circle path
-    t = np.linspace(0, 1, n_points)
+    Returns:
+    - A list of [latitude, longitude] pairs representing points along the great-circle path.
+    """
+    # Convert starting and ending points from degrees to radians.
+    start_lat_rad, start_lon_rad = np.radians(start_lat_lon)
+    end_lat_rad, end_lon_rad = np.radians(end_lat_lon)
+
+    # Calculate the central angle between the two points on the sphere using the spherical law of cosines.
+    central_angle = np.arccos(
+        np.sin(start_lat_rad) * np.sin(end_lat_rad) +
+        np.cos(start_lat_rad) * np.cos(end_lat_rad) * np.cos(end_lon_rad - start_lon_rad)
+    )
+
+    # Generate an array of interpolation fractions from 0 (start) to 1 (end).
+    interpolation_fractions = np.linspace(0, 1, n_points)
     intermediate_points = np.zeros((n_points, 2))
 
-    for i, _t in enumerate(t):
-        # Calculate the spherical linear interpolation (SLERP) between the two points
-        A = np.sin((1 - _t) * delta_sigma) / np.sin(delta_sigma)
-        B = np.sin(_t * delta_sigma) / np.sin(delta_sigma)
+    # Calculate each intermediate point using spherical linear interpolation (SLERP).
+    for index, fraction in enumerate(interpolation_fractions):
+        # Compute the SLERP coefficients for the starting and ending points.
+        coefficient_start = np.sin((1 - fraction) * central_angle) / np.sin(central_angle)
+        coefficient_end = np.sin(fraction * central_angle) / np.sin(central_angle)
 
-        x = A * np.cos(start_lat_lon_rad[0]) * np.cos(start_lat_lon_rad[1]) + \
-            B * np.cos(end_lat_lon_rad[0]) * np.cos(end_lat_lon_rad[1])
-        y = A * np.cos(start_lat_lon_rad[0]) * np.sin(start_lat_lon_rad[1]) + \
-            B * np.cos(end_lat_lon_rad[0]) * np.sin(end_lat_lon_rad[1])
-        z = A * np.sin(start_lat_lon_rad[0]) + B * np.sin(end_lat_lon_rad[0])
+        # Convert the interpolated point from spherical to Cartesian coordinates.
+        cartesian_x = (coefficient_start * np.cos(start_lat_rad) * np.cos(start_lon_rad) +
+                       coefficient_end * np.cos(end_lat_rad) * np.cos(end_lon_rad))
+        cartesian_y = (coefficient_start * np.cos(start_lat_rad) * np.sin(start_lon_rad) +
+                       coefficient_end * np.cos(end_lat_rad) * np.sin(end_lon_rad))
+        cartesian_z = (coefficient_start * np.sin(start_lat_rad) +
+                       coefficient_end * np.sin(end_lat_rad))
 
-        # Convert the Cartesian coordinates back to latitude and longitude
-        lat = np.arctan2(z, np.sqrt(x ** 2 + y ** 2))
-        lon = np.arctan2(y, x)
+        # Convert the Cartesian coordinates back to spherical (latitude, longitude) coordinates.
+        interpolated_lat_rad = np.arctan2(cartesian_z, np.sqrt(cartesian_x ** 2 + cartesian_y ** 2))
+        interpolated_lon_rad = np.arctan2(cartesian_y, cartesian_x)
 
-        intermediate_points[i] = np.degrees([lat, lon])
+        # Convert the result from radians back to degrees and store it.
+        intermediate_points[index] = np.degrees([interpolated_lat_rad, interpolated_lon_rad])
 
     return intermediate_points.tolist()
