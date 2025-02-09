@@ -66,7 +66,7 @@ def add_wind(direction: int, speed: int, m: Map, location: tuple[float, float]):
 
 
 # Route to render the map with dynamic coordinates
-@app.route('/ map', methods=['GET'])
+@app.route('/map', methods=['GET'])
 def serve_map():
     # Get the latitude and longitude from the request's query parameters (default to some coordinates if not provided)
     start_lat = request.args.get('start_lat', default=34.0522, type=float)  # Default to Los Angeles latitude
