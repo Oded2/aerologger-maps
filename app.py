@@ -1,17 +1,16 @@
-from email.policy import default
-
 from flask import Flask, request
 from folium import Map, plugins, Marker, Icon, PolyLine
+from folium.plugins import AntPath
 from geopy.distance import geodesic
 import os
 from hooks import get_mid_point, great_circle_points
+import json
 
 app = Flask(__name__)
 
 
-def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float], dep: str, des: str) -> Map:
+def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float], dep: str, des: str, dep_weather: dict, des_weather: dict) -> Map:
     distance = geodesic(start_coord, end_coord).kilometers
-
     # Determine zoom level based on distance
     if distance < 500:
         zoom_level = 10
@@ -30,10 +29,11 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
     Marker(location=start_coord, tooltip=dep, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=45)).add_to(
         m)
     Marker(location=end_coord, tooltip=des, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=135)).add_to(m)
+    add_wind(0,0,m, start_coord)
     plane_index = len(curve_points) // 8
 
     # Adding Bézier curve to the map
-    curve_line = PolyLine(curve_points[::-1], color="red", opacity=0.5).add_to(m)
+    PolyLine(curve_points[::-1], color="red", opacity=0.5).add_to(m)
     tiny_line = PolyLine(curve_points[:-plane_index][::-1], color="transparent").add_to(m)
 
     # Add plane to the line
@@ -45,9 +45,22 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
         orientation=180,
         attributes=attr,
     ).add_to(m)
+
     # Set the height to 100% in order to avoid an unnecessary scrollbar
     m.get_root().height = "100%"
     return m
+
+def add_wind(direction: int, speed: int, m: Map, location: tuple[float,float]):
+    pass
+    # end =geodesic(km=10).destination(location, 90)
+    # print(end)
+    # AntPath(
+    #     locations=[location, end],
+    #     dash_array=[10, 20],
+    #     color="red",
+    #     weight=3
+    # ).add_to(m)
+
 
 
 # Route to render the map with dynamic coordinates
@@ -60,9 +73,11 @@ def serve_map():
     end_lon = request.args.get('end_lon', default=34.7818, type=float)  # Default to Tel Aviv longitude
     dep = request.args.get("dep", default="KLAX", type=str)
     des = request.args.get("des", default="KTLV", type=str)
+    dep_weather = json.loads( request.args.get("dep_weather", type=str))
+    des_weather = json.loads(request.args.get("des_weather", type=str))
 
     # Create the map centered on the start coordinates
-    m = create_map((start_lat, start_lon), (end_lat, end_lon), dep, des)
+    m = create_map((start_lat, start_lon), (end_lat, end_lon), dep, des, dep_weather, des_weather)
     # Generate the HTML representation of the map
     map_html = m._repr_html_()
     return map_html
