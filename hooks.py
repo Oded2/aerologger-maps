@@ -1,7 +1,6 @@
 import numpy as np
 from folium import Map, Marker, Icon
 
-
 def avg(i: float, j: float) -> float:
     return (i + j) / 2
 
@@ -34,12 +33,13 @@ def great_circle_points(start_lat_lon: tuple, end_lat_lon: tuple, n_points=100):
     )
 
     # Generate an array of interpolation fractions from 0 (start) to 1 (end).
-    interpolation_fractions =tuple[float,float](np.linspace(0, 1, n_points))
+    interpolation_fractions =(np.linspace(0, 1, n_points))
     intermediate_points = np.zeros((n_points, 2))
 
 
     # Calculate each intermediate point using spherical linear interpolation (SLERP).
-    for index, fraction in enumerate(interpolation_fractions):
+    for index in range(len(interpolation_fractions)):
+        fraction = interpolation_fractions[index]
         # Compute the SLERP coefficients for the starting and ending points.
         coefficient_start = np.sin((1 - fraction) * central_angle) / np.sin(central_angle)
         coefficient_end = np.sin(fraction * central_angle) / np.sin(central_angle)
