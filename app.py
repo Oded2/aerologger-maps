@@ -1,10 +1,8 @@
 import json
 import os
-
 from flask import Flask, request
 from folium import Map, plugins, Marker, Icon, PolyLine
 from geopy.distance import geodesic
-
 from hooks import get_mid_point, great_circle_points
 
 app = Flask(__name__)
@@ -20,6 +18,8 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
         zoom_level = 8
     elif distance < 2000:
         zoom_level = 7
+    elif distance < 5000:
+        zoom_level = 5
     else:
         zoom_level = 3
 
@@ -28,9 +28,8 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
     curve_points = great_circle_points(
         start_coord, end_coord
     )
-    Marker(location=start_coord, tooltip=dep, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=45)).add_to(
-        m)
-    Marker(location=end_coord, tooltip=des, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=135)).add_to(m)
+    add_arrow(start_coord, end_coord, dep, m)
+    add_arrow(end_coord, start_coord, des, m)
     add_wind(0, 0, m, start_coord)
     plane_index = len(curve_points) // 8
 
@@ -51,6 +50,26 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
     # Set the height to 100% in order to avoid an unnecessary scrollbar
     m.get_root().height = "100%"
     return m
+
+
+def add_arrow(coord: tuple[float, float], relative_coord: tuple[float, float], tooltip: str, m: Map) -> None:
+    angle: int = 0
+    delta_lat = relative_coord[0] - coord[0]
+    delta_lon = relative_coord[1] - coord[1]
+    is_north: bool = delta_lat > 0
+    is_west: bool = delta_lon < 0
+    print(is_north)
+    if is_north and is_west:
+        angle = 315
+    elif is_north and not is_west:
+        angle = 45
+    elif not is_north and is_west:
+        angle = 225
+    elif not is_north and not is_west:
+        angle = 135
+
+    Marker(location=coord, tooltip=tooltip, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=angle)).add_to(
+        m)
 
 
 def add_wind(direction: int, speed: int, m: Map, location: tuple[float, float]):
