@@ -58,7 +58,6 @@ def great_circle_points(start_lat_lon: tuple, end_lat_lon: tuple, n_points=100):
 
         # Convert the result from radians back to degrees and store it.
         intermediate_points[index] = np.degrees([interpolated_lat_rad, interpolated_lon_rad])
-
     return intermediate_points.tolist()
 
 
