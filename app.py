@@ -1,9 +1,9 @@
 import json
 import os
 from flask import Flask, request
-from folium import Map, plugins, Marker, Icon, PolyLine
+from folium import Map, plugins, PolyLine
 from geopy.distance import geodesic
-from hooks import get_mid_point, great_circle_points
+from hooks import get_mid_point, great_circle_points, add_arrow
 
 app = Flask(__name__)
 
@@ -50,24 +50,6 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
     # Set the height to 100% in order to avoid an unnecessary scrollbar
     m.get_root().height = "100%"
     return m
-
-
-def add_arrow(coord: tuple[float, float], relative_coord: tuple[float, float], tooltip: str, m: Map) -> None:
-    angle: int = 0
-    is_north: bool = relative_coord[0]-coord[0] > 0
-    is_west: bool = relative_coord[1]-coord[1] < 0
-    print(is_north)
-    if is_north and is_west:
-        angle = 315
-    elif is_north and not is_west:
-        angle = 45
-    elif not is_north and is_west:
-        angle = 225
-    elif not is_north and not is_west:
-        angle = 135
-
-    Marker(location=coord, tooltip=tooltip, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=angle)).add_to(
-        m)
 
 
 def add_wind(direction: int, speed: int, m: Map, location: tuple[float, float]):
