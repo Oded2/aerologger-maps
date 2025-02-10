@@ -54,10 +54,8 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
 
 def add_arrow(coord: tuple[float, float], relative_coord: tuple[float, float], tooltip: str, m: Map) -> None:
     angle: int = 0
-    delta_lat = relative_coord[0] - coord[0]
-    delta_lon = relative_coord[1] - coord[1]
-    is_north: bool = delta_lat > 0
-    is_west: bool = delta_lon < 0
+    is_north: bool = relative_coord[0]-coord[0] > 0
+    is_west: bool = relative_coord[1]-coord[1] < 0
     print(is_north)
     if is_north and is_west:
         angle = 315
