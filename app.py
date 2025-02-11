@@ -29,7 +29,7 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
         start_coord, end_coord
     )
     add_arrow(start_coord, end_coord, dep, m)
-    add_arrow(end_coord, start_coord, des, m)
+    add_arrow(end_coord, start_coord, des, m, True)
     add_wind(0, 0, m, start_coord)
     plane_index = len(curve_points) // 8
 

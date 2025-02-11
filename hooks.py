@@ -1,6 +1,7 @@
 import numpy as np
 from folium import Map, Marker, Icon
 
+
 def avg(i: float, j: float) -> float:
     return (i + j) / 2
 
@@ -33,9 +34,8 @@ def great_circle_points(start_lat_lon: tuple, end_lat_lon: tuple, n_points=100):
     )
 
     # Generate an array of interpolation fractions from 0 (start) to 1 (end).
-    interpolation_fractions =(np.linspace(0, 1, n_points))
+    interpolation_fractions = (np.linspace(0, 1, n_points))
     intermediate_points = np.zeros((n_points, 2))
-
 
     # Calculate each intermediate point using spherical linear interpolation (SLERP).
     for index in range(len(interpolation_fractions)):
@@ -61,10 +61,11 @@ def great_circle_points(start_lat_lon: tuple, end_lat_lon: tuple, n_points=100):
     return intermediate_points.tolist()
 
 
-def add_arrow(coord: tuple[float, float], relative_coord: tuple[float, float], tooltip: str, m: Map) -> None:
-    angle: int = 0
-    is_north: bool = relative_coord[0]-coord[0] > 0
-    is_west: bool = relative_coord[1]-coord[1] < 0
+def add_arrow(coord: tuple[float, float], relative_coord: tuple[float, float], tooltip: str, m: Map,
+              flipped: bool = False) -> None:
+    angle: int = 45
+    is_north: bool = relative_coord[0] - coord[0] > 0
+    is_west: bool = relative_coord[1] - coord[1] < 0
     if is_north and is_west:
         angle = 315
     elif is_north and not is_west:
@@ -73,5 +74,7 @@ def add_arrow(coord: tuple[float, float], relative_coord: tuple[float, float], t
         angle = 225
     elif not is_north and not is_west:
         angle = 135
+    if flipped:
+        angle = (angle + 180) % 360
     Marker(location=coord, tooltip=tooltip, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=angle)).add_to(
         m)
