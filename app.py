@@ -8,8 +8,7 @@ from hooks import get_mid_point, great_circle_points, add_arrow
 app = Flask(__name__)
 
 
-def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float], dep: str, des: str, dep_weather: dict,
-               des_weather: dict) -> Map:
+def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float], dep: str, des: str, weather: list[dict]) -> Map:
     distance = geodesic(start_coord, end_coord).kilometers
     # Determine zoom level based on distance
     if distance < 500:
@@ -74,11 +73,10 @@ def serve_map():
     end_lon = request.args.get('end_lon', default=34.7818, type=float)  # Default to Tel Aviv longitude
     dep = request.args.get("dep", default="KLAX", type=str)
     des = request.args.get("des", default="KTLV", type=str)
-    dep_weather = json.loads(request.args.get("dep_weather", type=str))
-    des_weather = json.loads(request.args.get("des_weather", type=str))
+    weather_data = json.loads(request.args.get("weather_data"))
 
     # Create the map centered on the start coordinates
-    m = create_map((start_lat, start_lon), (end_lat, end_lon), dep, des, dep_weather, des_weather)
+    m = create_map((start_lat, start_lon), (end_lat, end_lon), dep, des,weather_data)
     # Generate the HTML representation of the map
     map_html = m._repr_html_()
     return map_html
