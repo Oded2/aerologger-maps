@@ -1,7 +1,7 @@
 import json
 import os
 from flask import Flask, request
-from folium import Map, plugins, PolyLine
+from folium import Map, plugins, PolyLine, TileLayer, LayerControl, FeatureGroup
 from geopy.distance import geodesic
 from hooks import get_mid_point, great_circle_points, add_arrow
 
@@ -22,8 +22,23 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
     else:
         zoom_level = 3
 
-    m = Map(get_mid_point(start_coord, end_coord), zoom_start=zoom_level)
-
+    m = Map(get_mid_point(start_coord, end_coord), zoom_start=zoom_level, tiles="openstreetmap")
+    satellite = TileLayer(
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        attr="Esri",
+        name="Satellite"
+    )
+    borders = TileLayer(
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+        attr="Esri",
+        name="Borders & Labels",
+        overlay=True,
+        control=False
+    )
+    satellite_group = FeatureGroup(name="Satellite + Borders", overlay=False, show=False).add_to(m)
+    satellite_group.add_child(satellite)
+    satellite_group.add_child(borders)
+    LayerControl().add_to(m)
     curve_points = great_circle_points(
         start_coord, end_coord
     )
@@ -48,6 +63,7 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
 
     # Set the height to 100% in order to avoid an unnecessary scrollbar
     m.get_root().height = "100%"
+    m.get_root().width="100%"
     return m
 
 
