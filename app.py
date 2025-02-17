@@ -73,7 +73,7 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
 
 
 def add_wind(weather: list[dict], m: Map):
-    return;
+    return
     for data in weather:
         print(data)
         coord: tuple[float,float] = data["coord"]
