@@ -1,14 +1,18 @@
 import json
 import os
+
 from flask import Flask, request
 from folium import Map, plugins, PolyLine, TileLayer, LayerControl, FeatureGroup
+from folium.plugins import AntPath
 from geopy.distance import geodesic
+
 from hooks import get_mid_point, great_circle_points, add_arrow
 
 app = Flask(__name__)
 
 
-def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float], dep: str, des: str, weather: list[dict]) -> Map:
+def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float], dep: str, des: str,
+               weather: list[dict]) -> Map:
     distance = geodesic(start_coord, end_coord).kilometers
     # Determine zoom level based on distance
     if distance < 500:
@@ -45,7 +49,7 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
     )
     add_arrow(start_coord, end_coord, dep, m)
     add_arrow(end_coord, start_coord, des, m, True)
-    add_wind(0, 0, m, start_coord)
+    add_wind(weather, m)
     plane_index = len(curve_points) // 8
 
     # Adding Bézier curve to the map
@@ -64,20 +68,19 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
 
     # Set the height to 100% in order to avoid an unnecessary scrollbar
     m.get_root().height = "100%"
-    m.get_root().width="100%"
+    m.get_root().width = "100%"
     return m
 
 
-def add_wind(direction: int, speed: int, m: Map, location: tuple[float, float]):
-    pass
-    # end =geodesic(km=10).destination(location, 90)
-    # print(end)
-    # AntPath(
-    #     locations=[location, end],
-    #     dash_array=[10, 20],
-    #     color="red",
-    #     weight=3
-    # ).add_to(m)
+def add_wind(weather: list[dict], m: Map):
+    return;
+    for data in weather:
+        print(data)
+        coord: tuple[float,float] = data["coord"]
+        direction : float = data["wind_direction"]
+        speed : float = data["wind_speed"]
+        locations = geodesic(kilometers=10).destination(coord[::-1], bearing=direction*180)
+        AntPath(locations=[coord, [locations.longitude, locations.latitude]]).add_to(m)
 
 
 # Route to render the map with dynamic coordinates
@@ -93,7 +96,7 @@ def serve_map():
     weather_data = json.loads(request.args.get("weather_data"))
 
     # Create the map centered on the start coordinates
-    m = create_map((start_lat, start_lon), (end_lat, end_lon), dep, des,weather_data)
+    m = create_map((start_lat, start_lon), (end_lat, end_lon), dep, des, weather_data)
     # Generate the HTML representation of the map
     map_html = m._repr_html_()
     return map_html
