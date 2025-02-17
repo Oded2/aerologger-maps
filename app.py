@@ -29,7 +29,8 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
         name="Satellite"
     )
     borders = TileLayer(
-        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer"
+              "/tile/{z}/{y}/{x}",
         attr="Esri",
         name="Borders & Labels",
         overlay=True,
