@@ -44,9 +44,12 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
     satellite_group.add_child(satellite)
     satellite_group.add_child(borders)
     LayerControl().add_to(m)
-    curve_points = great_circle_points(start_coord, end_coord)
+
     add_arrow(start_coord, end_coord, dep, m)
+    if distance==0:
+        return m
     add_arrow(end_coord, start_coord, des, m, True)
+    curve_points = great_circle_points(start_coord, end_coord)
     add_wind(weather, m)
     plane_index = len(curve_points) // 8
 
