@@ -5,7 +5,7 @@ from flask import Flask, request
 from folium import Map, plugins, PolyLine, TileLayer, LayerControl, FeatureGroup
 from folium.plugins import AntPath
 from geopy.distance import geodesic
-
+from flask_cors import cross_origin
 from hooks import get_mid_point, great_circle_points, add_arrow
 
 app = Flask(__name__)
@@ -44,9 +44,7 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
     satellite_group.add_child(satellite)
     satellite_group.add_child(borders)
     LayerControl().add_to(m)
-    curve_points = great_circle_points(
-        start_coord, end_coord
-    )
+    curve_points = great_circle_points(start_coord, end_coord)
     add_arrow(start_coord, end_coord, dep, m)
     add_arrow(end_coord, start_coord, des, m, True)
     add_wind(weather, m)
@@ -74,30 +72,34 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
 
 def add_wind(weather: list[dict], m: Map):
     return
-    for data in weather:
-        print(data)
-        coord: tuple[float,float] = data["coord"]
-        direction : float = data["wind_direction"]
-        speed : float = data["wind_speed"]
-        locations = geodesic(kilometers=10).destination(coord[::-1], bearing=direction*180)
-        AntPath(locations=[coord, [locations.longitude, locations.latitude]]).add_to(m)
+    # for data in weather:
+    #     print(data)
+    #     coord: tuple[float, float] = data["coord"]
+    #     direction: float = data["wind_direction"]
+    #     speed: float = data["wind_speed"]
+    #     locations = geodesic(kilometers=10).destination(coord[::-1], bearing=direction * 180)
+    #     AntPath(locations=[coord, [locations.longitude, locations.latitude]]).add_to(m)
 
 
-# Route to render the map with dynamic coordinates
-@app.route('/map', methods=['GET'])
+# Modified route to accept POST and JSON data
+@app.route('/map', methods=['POST'])
+@cross_origin()
 def serve_map():
-    # Get the latitude and longitude from the request's query parameters (default to some coordinates if not provided)
-    start_lat = request.args.get('start_lat', default=34.0522, type=float)  # Default to Los Angeles latitude
-    start_lon = request.args.get('start_lon', default=-118.2437, type=float)  # Default to Los Angeles longitude
-    end_lat = request.args.get('end_lat', default=32.0853, type=float)  # Default to Tel Aviv latitude
-    end_lon = request.args.get('end_lon', default=34.7818, type=float)  # Default to Tel Aviv longitude
-    dep = request.args.get("dep", default="KLAX", type=str)
-    des = request.args.get("des", default="KTLV", type=str)
-    weather_data = json.loads(request.args.get("weather_data"))
+    data = request.get_json()
+    if data is None:
+        return "No JSON data provided", 400
 
-    # Create the map centered on the start coordinates
+    start_lat = data.get('start_lat', 34.0522)
+    start_lon = data.get('start_lon', -118.2437)
+    end_lat = data.get('end_lat', 32.0853)
+    end_lon = data.get('end_lon', 34.7818)
+    dep = data.get("dep", "KLAX")
+    des = data.get("des", "KTLV")
+    weather_data = data.get("weather_data", [])
+
+    # Create the map using provided data
     m = create_map((start_lat, start_lon), (end_lat, end_lon), dep, des, weather_data)
-    # Generate the HTML representation of the map
+    # Return the HTML representation of the map
     map_html = m._repr_html_()
     return map_html
 
