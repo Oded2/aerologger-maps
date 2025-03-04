@@ -1,4 +1,3 @@
-import json
 import os
 
 from flask import Flask, request
@@ -74,14 +73,18 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
 
 
 def add_wind(weather: list[dict], m: Map):
-    return
-    # for data in weather:
-    #     print(data)
-    #     coord: tuple[float, float] = data["coord"]
-    #     direction: float = data["wind_direction"]
-    #     speed: float = data["wind_speed"]
-    #     locations = geodesic(kilometers=10).destination(coord[::-1], bearing=direction * 180)
-    #     AntPath(locations=[coord, [locations.longitude, locations.latitude]]).add_to(m)
+    for i in range(len(weather)-1):
+        coord: [float, float] = weather[i]["coord"]
+        next_coord : [float, float] = weather[i+1]["coord"]
+        points = great_circle_points(coord, next_coord, 10)
+        speed : float = weather[i]["wind_speed"]
+        # direction: float = data["wind_direction"]
+        # speed: float = data["wind_speed"]
+        # locations = geodesic(kilometers=10).destination(coord, bearing=direction * 180)
+        # AntPath(locations=[coord, [locations.longitude, locations.latitude]]).add_to(m)
+        AntPath(
+            locations=points, dash_array=[20, 30], delay=speed*20
+        ).add_to(m)
 
 
 # Modified route to accept POST and JSON data
