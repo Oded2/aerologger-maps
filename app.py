@@ -10,8 +10,11 @@ from hooks import get_mid_point, great_circle_points, add_arrow
 app = Flask(__name__)
 
 
-def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float], dep: str, des: str,
+def create_map(dep: str, des: str,
                weather: list[dict]) -> Map:
+    start_coord = weather[0]["coord"]
+    end_coord = weather[len(weather)-1]["coord"]
+    print(start_coord)
     distance = geodesic(start_coord, end_coord).kilometers
     # Determine zoom level based on distance
     if distance < 500:
@@ -49,7 +52,7 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
         return m
     add_arrow(end_coord, start_coord, des, m, True)
     curve_points = great_circle_points(start_coord, end_coord)
-    add_wind(weather, m)
+    # add_wind(weather, m)
     plane_index = len(curve_points) // 8
 
     # Adding Bézier curve to the map
@@ -71,22 +74,6 @@ def create_map(start_coord: tuple[float, float], end_coord: tuple[float, float],
     m.get_root().width = "100%"
     return m
 
-
-def add_wind(weather: list[dict], m: Map):
-    for i in range(len(weather)-1):
-        coord: [float, float] = weather[i]["coord"]
-        next_coord : [float, float] = weather[i+1]["coord"]
-        points = great_circle_points(coord, next_coord, 10)
-        speed : float = weather[i]["wind_speed"]
-        # direction: float = data["wind_direction"]
-        # speed: float = data["wind_speed"]
-        # locations = geodesic(kilometers=10).destination(coord, bearing=direction * 180)
-        # AntPath(locations=[coord, [locations.longitude, locations.latitude]]).add_to(m)
-        AntPath(
-            locations=points, dash_array=[20, 30], delay=speed*20
-        ).add_to(m)
-
-
 # Modified route to accept POST and JSON data
 @app.route('/map', methods=['POST'])
 @cross_origin()
@@ -94,17 +81,12 @@ def serve_map():
     data = request.get_json()
     if data is None:
         return "No JSON data provided", 400
-
-    start_lat = data.get('start_lat', 34.0522)
-    start_lon = data.get('start_lon', -118.2437)
-    end_lat = data.get('end_lat', 32.0853)
-    end_lon = data.get('end_lon', 34.7818)
     dep = data.get("dep", "KLAX")
     des = data.get("des", "KTLV")
     weather_data = data.get("weather_data", [])
 
     # Create the map using provided data
-    m = create_map((start_lat, start_lon), (end_lat, end_lon), dep, des, weather_data)
+    m = create_map(dep, des, weather_data)
     # Return the HTML representation of the map
     map_html = m._repr_html_()
     return map_html
