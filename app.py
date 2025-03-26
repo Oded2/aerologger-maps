@@ -1,19 +1,19 @@
 import os
 
 from flask import Flask, request
-from folium import Map, plugins, PolyLine, TileLayer, LayerControl, FeatureGroup
-from folium.plugins import AntPath
-from geopy.distance import geodesic
 from flask_cors import cross_origin
-from hooks import get_mid_point, great_circle_points, add_arrow
+from folium import Map, plugins, PolyLine, TileLayer, LayerControl, FeatureGroup
+from geopy.distance import geodesic
+
+from hooks import get_mid_point, add_arrow
 
 app = Flask(__name__)
 
 
-def create_map(dep: str, des: str,
+def create_map(points: list[[float, float]], dep: str, des: str,
                weather: list[dict]) -> Map:
     start_coord = weather[0]["coord"]
-    end_coord = weather[len(weather)-1]["coord"]
+    end_coord = weather[len(weather) - 1]["coord"]
     print(start_coord)
     distance = geodesic(start_coord, end_coord).kilometers
     # Determine zoom level based on distance
@@ -48,16 +48,15 @@ def create_map(dep: str, des: str,
     LayerControl().add_to(m)
 
     add_arrow(start_coord, end_coord, dep, m)
-    if distance==0:
+    if distance == 0:
         return m
     add_arrow(end_coord, start_coord, des, m, True)
-    curve_points = great_circle_points(start_coord, end_coord)
     # add_wind(weather, m)
-    plane_index = len(curve_points) // 8
+    plane_index = len(points) // 8
 
-    # Adding Bézier curve to the map
-    PolyLine(curve_points[::-1], color="red", opacity=0.5).add_to(m)
-    tiny_line = PolyLine(curve_points[:-plane_index][::-1], color="transparent").add_to(m)
+    # Add the route based on the points received from the client
+    PolyLine(points, color="red", opacity=0.5).add_to(m)
+    tiny_line = PolyLine(points[:-plane_index][::-1], color="transparent").add_to(m)
 
     # Add plane to the line
     attr = {"fill": "red", "font-weight": "bold", "font-size": "30"}
@@ -74,6 +73,7 @@ def create_map(dep: str, des: str,
     m.get_root().width = "100%"
     return m
 
+
 # Modified route to accept POST and JSON data
 @app.route('/map', methods=['POST'])
 @cross_origin()
@@ -81,14 +81,15 @@ def serve_map():
     data = request.get_json()
     if data is None:
         return "No JSON data provided", 400
+    points = data.get("points", [])
     dep = data.get("dep", "KLAX")
     des = data.get("des", "KTLV")
     weather_data = data.get("weather_data", [])
 
     # Create the map using provided data
-    m = create_map(dep, des, weather_data)
+    m = create_map(points, dep, des, weather_data)
     # Return the HTML representation of the map
-    map_html = m._repr_html_()
+    map_html = m.get_root().render()
     return map_html
 
 
