@@ -12,9 +12,8 @@ app = Flask(__name__)
 
 def create_map(points: list[[float, float]], dep: str, des: str,
                weather: list[dict]) -> Map:
-    start_coord = weather[0]["coord"]
-    end_coord = weather[len(weather) - 1]["coord"]
-    print(start_coord)
+    start_coord = points[0]
+    end_coord = points[-1]
     distance = geodesic(start_coord, end_coord).kilometers
     # Determine zoom level based on distance
     if distance < 500:
