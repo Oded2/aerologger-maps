@@ -1,6 +1,5 @@
 Flask>=2.2.2
 geopy~=2.4.1
 folium~=0.19.4
-numpy~=1.26.4
 gunicorn==22.0.0
 flask-cors~=5.0.1
