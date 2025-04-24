@@ -93,5 +93,5 @@ def serve_map():
 
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # Render will set the PORT environment variable
+    port = int(os.environ.get('PORT', 5001))  # Render will set the PORT environment variable
     app.run(host='0.0.0.0', port=port)  # Bind to 0.0.0.0 to be accessible externally
