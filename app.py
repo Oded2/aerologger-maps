@@ -5,7 +5,7 @@ from flask_cors import cross_origin
 from folium import Map, plugins, PolyLine, TileLayer, LayerControl, FeatureGroup
 from geopy.distance import geodesic
 
-from hooks import get_mid_point, add_arrow
+from hooks import get_mid_point, add_arrow, add_wind
 
 app = Flask(__name__)
 
@@ -50,8 +50,10 @@ def create_map(points: list[[float, float]], dep: str, des: str,
     if distance == 0:
         return m
     add_arrow(end_coord, start_coord, des, m, True)
-    # add_wind(weather, m)
     plane_index = len(points) // 8
+    if weather:
+        for w in weather:
+            add_wind(w,m)
 
     # Add the route based on the points received from the client
     PolyLine(points, color="red", opacity=0.5).add_to(m)
@@ -61,7 +63,7 @@ def create_map(points: list[[float, float]], dep: str, des: str,
     attr = {"fill": "red", "font-weight": "bold", "font-size": "30"}
     plugins.PolyLineTextPath(
         tiny_line,
-        "\u2708",  # Plane unicode symbol
+        "\u2708", # Plane unicode symbol
         repeat=False,
         orientation=180,
         attributes=attr,

@@ -1,4 +1,5 @@
-from folium import Map, Marker, Icon
+from folium import Map, Marker, Icon, CustomIcon
+
 
 
 def avg(i: float, j: float) -> float:
@@ -26,3 +27,8 @@ def add_arrow(coord: tuple[float, float], relative_coord: tuple[float, float], t
         angle = (angle + 180) % 360
     Marker(location=coord, tooltip=tooltip, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=angle)).add_to(
         m)
+
+
+def add_wind(wind, m: Map):
+    custom_icon = CustomIcon(icon_image="images/wind.png", icon_size=(50, 50), icon_anchor=(25, 25))
+    Marker(location=wind["coord"][::-1], icon=custom_icon, tooltip=f"{wind["wind_direction"]}/{wind["wind_speed"]}KN").add_to(m)
