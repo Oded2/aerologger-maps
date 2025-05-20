@@ -84,7 +84,7 @@ def serve_map():
         return "No JSON data provided", 400
     points = data.get("points", [])
     dep = data.get("dep", "KLAX")
-    des = data.get("des", "KTLV")
+    des = data.get("des", "LLBG")
     weather_data = data.get("weather_data", [])
 
     # Create the map using provided data
