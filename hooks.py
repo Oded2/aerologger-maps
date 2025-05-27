@@ -12,21 +12,44 @@ def get_mid_point(start: tuple[float, float], end: tuple[float, float]):
 
 def add_arrow(coord: tuple[float, float], relative_coord: tuple[float, float], tooltip: str, m: Map,
               flipped: bool = False) -> None:
+    """
+    Adds an arrow marker to a map at a specified location, pointing in the direction of a relative coordinate.
+
+    Parameters:
+        coord (tuple[float, float]): The base (latitude, longitude) where the arrow will be placed.
+        relative_coord (tuple[float, float]): Another (latitude, longitude) used to determine the arrow's direction.
+        tooltip (str): A tooltip to show when hovering over the arrow.
+        m (Map): The Folium map object to which the marker is added.
+        flipped (bool): If True, the arrow is flipped 180 degrees.
+    """
+
+    # Default angle pointing northeast (used if direction is north and east)
     angle: int = 45
+
+    # Determine if the relative coordinate is north and/or west of the base coordinate
     is_north: bool = relative_coord[0] - coord[0] > 0
     is_west: bool = relative_coord[1] - coord[1] < 0
+
+    # Set the arrow's angle based on relative position
     if is_north and is_west:
-        angle = 315
+        angle = 315  # Northwest
     elif is_north and not is_west:
-        angle = 45
+        angle = 45  # Northeast
     elif not is_north and is_west:
-        angle = 225
+        angle = 225  # Southwest
     elif not is_north and not is_west:
-        angle = 135
+        angle = 135  # Southeast
+
+    # Flip the arrow if requested
     if flipped:
         angle = (angle + 180) % 360
-    Marker(location=coord, tooltip=tooltip, icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=angle)).add_to(
-        m)
+
+    # Create and add the marker with the appropriate icon and angle to the map
+    Marker(
+        location=coord,
+        tooltip=tooltip,
+        icon=Icon(prefix="fa", color="green", icon="arrow-up", angle=angle)
+    ).add_to(m)
 
 
 def add_wind(wind, m: Map):
