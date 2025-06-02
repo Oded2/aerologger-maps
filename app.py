@@ -27,7 +27,14 @@ def create_map(points: list[[float, float]], dep: str, des: str,
     else:
         zoom_level = 3
 
-    m = Map(get_mid_point(start_coord, end_coord), zoom_start=zoom_level, tiles="openstreetmap")
+    m = Map(get_mid_point(start_coord, end_coord), zoom_start=zoom_level, tiles=None)
+
+    TileLayer(
+        tiles="openstreetmap",
+        name="OpenStreetMap",
+        show=False
+    ).add_to(m)
+
     satellite = TileLayer(
         tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         attr="Esri",
@@ -41,7 +48,7 @@ def create_map(points: list[[float, float]], dep: str, des: str,
         overlay=True,
         control=False
     )
-    satellite_group = FeatureGroup(name="Satellite + Borders", overlay=False, show=False).add_to(m)
+    satellite_group = FeatureGroup(name="Satellite + Borders", overlay=False, show=True).add_to(m)
     satellite_group.add_child(satellite)
     satellite_group.add_child(borders)
     LayerControl().add_to(m)
@@ -53,7 +60,7 @@ def create_map(points: list[[float, float]], dep: str, des: str,
     plane_index = len(points) // 8
     if weather:
         for w in weather:
-            add_wind(w,m)
+            add_wind(w, m)
 
     # Add the route based on the points received from the client
     PolyLine(points, color="red", opacity=0.5).add_to(m)
@@ -63,7 +70,7 @@ def create_map(points: list[[float, float]], dep: str, des: str,
     attr = {"fill": "red", "font-weight": "bold", "font-size": "30"}
     plugins.PolyLineTextPath(
         tiny_line,
-        "\u2708", # Plane unicode symbol
+        "\u2708",  # Plane unicode symbol
         repeat=False,
         orientation=180,
         attributes=attr,
